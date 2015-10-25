@@ -7,7 +7,7 @@
             <Button Height="50" Click="NewPatternViewSummon">
                 New Pattern
             </Button>
-            <Button Height="50">
+            <Button Height="50" Click="LoadPatternViewSummon">
                 Load Pattern
             </Button>
             <Button Height="50">

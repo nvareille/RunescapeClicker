@@ -26,7 +26,12 @@ namespace Runescape_Clicker.Views
         public NewPatternView()
         {
             InitializeComponent();
+        }
+
+        public void Reset()
+        {
             mouseCatcher = new MouseCatcher();
+            mouseCatcher.window = this;
         }
 
         private void StartRecording(object sender, RoutedEventArgs e)

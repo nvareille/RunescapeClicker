@@ -22,5 +22,20 @@ namespace Runescape_Clicker.Models
 
             File.WriteAllText(path, str);
         }
+
+        public void Load(string path)
+        {
+            string[] lines = File.ReadAllLines(path);
+
+            Actions = lines.ToList();
+        }
+
+        public string GetNextAction()
+        {
+            string action = Actions.First();
+
+            Actions.Remove(action);
+            return (action);
+        }
     }
 }

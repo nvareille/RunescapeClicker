@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using Runescape_Clicker.Models;
 
 namespace Runescape_Clicker.ViewModels
@@ -63,21 +64,39 @@ namespace Runescape_Clicker.ViewModels
         public static MouseCatcher MouseCatcherRef;
         public static Dictionary<MouseMessages, MouseTrigger> Actions;
         public Pattern Pattern;
+        private DateTime a = DateTime.Now;
+        public Window window;
+        public bool Started;
+
+        public int GetElapsedTime()
+        {
+            TimeSpan b = DateTime.Now - a;
+            a = DateTime.Now;
+            return (Convert.ToInt32(b.TotalMilliseconds));
+        }
 
         public static void MouseMove(MouseCatcher m, HookStruct str)
         {
-            if (m.pt != str.pt)
-                m.Pattern.Actions.Add(str.pt.x + " " + str.pt.y);
+            m.Pattern.Actions.Add(str.pt.x + " " + str.pt.y);
         }
 
-        public static void LeftClick(MouseCatcher m, HookStruct str)
+        public static void LeftClickUp(MouseCatcher m, HookStruct str)
         {
-            m.Pattern.Actions.Add("LEFT_CLICK");
+            m.Pattern.Actions.Add("LEFT_CLICK_UP");
         }
 
-        public static void RightClick(MouseCatcher m, HookStruct str)
+        public static void RightClickUp(MouseCatcher m, HookStruct str)
         {
-            m.Pattern.Actions.Add("RIGHT_CLICK");
+            m.Pattern.Actions.Add("RIGHT_CLICK_UP");
+        }
+        public static void LeftClickDown(MouseCatcher m, HookStruct str)
+        {
+            m.Pattern.Actions.Add("LEFT_CLICK_DOWN");
+        }
+
+        public static void RightClickDown(MouseCatcher m, HookStruct str)
+        {
+            m.Pattern.Actions.Add("RIGHT_CLICK_DOWN");
         }
 
         public void Init()
@@ -89,13 +108,18 @@ namespace Runescape_Clicker.ViewModels
                 Actions = new Dictionary<MouseMessages, MouseTrigger>();
 
                 Actions.Add(MouseMessages.WM_MOUSEMOVE, MouseMove);
-                Actions.Add(MouseMessages.WM_LBUTTONDOWN, LeftClick);
-                Actions.Add(MouseMessages.WM_RBUTTONDOWN, RightClick);
+                Actions.Add(MouseMessages.WM_LBUTTONDOWN, LeftClickDown);
+                Actions.Add(MouseMessages.WM_LBUTTONUP, LeftClickUp);
+                Actions.Add(MouseMessages.WM_RBUTTONDOWN, RightClickDown);
+                Actions.Add(MouseMessages.WM_RBUTTONUP, RightClickUp);
             }
         }
 
         public void ActivateHook(string init)
         {
+            if (Started)
+                return;
+            GetElapsedTime();
             Init();
             Pattern = new Pattern();
             Pattern.Actions.Add(init);
@@ -105,6 +129,8 @@ namespace Runescape_Clicker.ViewModels
         public void DeactivateHook()
         {
             UnhookWindowsHookEx(_hookID);
+            window.Close();
+            Started = true;
         }
 
         private static LowLevelMouseProc _proc = HookCallback;
@@ -125,9 +151,11 @@ namespace Runescape_Clicker.ViewModels
         {
             if (nCode >= 0)
             {
+                int ms = MouseCatcherRef.GetElapsedTime();
                 HookStruct hookStruct = (HookStruct)Marshal.PtrToStructure(lParam, typeof(HookStruct));
                 if (Actions.ContainsKey((MouseMessages)wParam))
                 {
+                    MouseCatcherRef.Pattern.Actions.Add("WAIT " + ms);
                     Actions[(MouseMessages) wParam](MouseCatcherRef, hookStruct);
                 }
                 MouseCatcherRef.pt = hookStruct.pt.Clone();
@@ -151,5 +179,6 @@ namespace Runescape_Clicker.ViewModels
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
+
     }
 }

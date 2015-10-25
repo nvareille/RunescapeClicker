@@ -17,12 +17,15 @@ namespace Runescape_Clicker.Views
         {
             NewPatternView content = new NewPatternView();
             
+            content.Reset();
             content.Show();
         }
 
         private void LoadPatternViewSummon(object sender, RoutedEventArgs e)
         {
+            LoadPatternView content = new LoadPatternView();
 
+            content.Show();
         }
         
         private void DeletePatternViewSummon(object sender, RoutedEventArgs e)

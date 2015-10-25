@@ -55,9 +55,17 @@
     </ApplicationDefinition>
     <Compile Include="Models\Pattern.cs" />
     <Compile Include="ViewModels\MouseCatcher.cs" />
+    <Compile Include="ViewModels\MouseInterpreter.cs" />
+    <Compile Include="Views\LoadPatternView.xaml.cs">
+      <DependentUpon>LoadPatternView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\NewPatternView.xaml.cs">
       <DependentUpon>NewPatternView.xaml</DependentUpon>
     </Compile>
+    <Page Include="Views\LoadPatternView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
