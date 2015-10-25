@@ -1,0 +1,14 @@
+﻿<Window x:Class="Runescape_Clicker.Views.NewPatternView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="New Pattern" Height="300" Width="300">
+    <StackPanel>
+        <DockPanel>
+            <RadioButton IsChecked="True" Margin="10" Name="Absolute">Absolute Path</RadioButton>
+            <RadioButton Margin="10">Relative Path</RadioButton>
+        </DockPanel>
+        <Button Height="40" Click="StartRecording" Name="RecordingButton">
+            Start Recording
+        </Button>
+    </StackPanel>
+</Window>
