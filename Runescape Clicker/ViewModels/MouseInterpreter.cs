@@ -10,63 +10,8 @@ using Runescape_Clicker.Models;
 
 namespace Runescape_Clicker.ViewModels
 {
-    public class KeyboardHook
-    {
-        public static bool Stop = false;
-        public static Mutex mutex = new Mutex();
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc callback, IntPtr hInstance, uint threadId);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern bool UnhookWindowsHookEx(IntPtr hInstance);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern IntPtr CallNextHookEx(IntPtr idHook, int nCode, int wParam, IntPtr lParam);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern IntPtr LoadLibrary(string lpFileName);
-
-        private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-
-        const int WH_KEYBOARD_LL = 13;
-        const int WM_KEYDOWN = 0x100;
-
-        private LowLevelKeyboardProc _proc = hookProc;
-
-        private static IntPtr hhook = IntPtr.Zero;
-
-        public void SetHook()
-        {
-            Stop = false;
-            IntPtr hInstance = LoadLibrary("User32");
-            hhook = SetWindowsHookEx(WH_KEYBOARD_LL, _proc, hInstance, 0);
-        }
-
-        public static void UnHook()
-        {
-            UnhookWindowsHookEx(hhook);
-        }
-
-        public static IntPtr hookProc(int code, IntPtr wParam, IntPtr lParam)
-        {
-            if (code >= 0 && wParam == (IntPtr)WM_KEYDOWN)
-            {
-                Console.WriteLine("KEY");
-                UnHook();
-                Stop = true;
-                mutex.ReleaseMutex();
-                return (IntPtr)1;
-            }
-            mutex.ReleaseMutex();
-            return CallNextHookEx(hhook, code, (int)wParam, lParam);
-        }
-    }
-
     public class MouseInterpreter
     {
-        private KeyboardHook keyboardHook = new KeyboardHook();
-
         [Flags]
         public enum MouseEventFlags
         {
@@ -88,9 +33,12 @@ namespace Runescape_Clicker.ViewModels
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool GetCursorPos(out POINT lpMousePoint);
 
+
         [DllImport("user32.dll")]
         private static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
 
+        public bool Started;
+        public Thread Thread;
         public Pattern Actions;
         public Dictionary<string, MouseEventFlags> MouseCodes;
 
@@ -104,6 +52,20 @@ namespace Runescape_Clicker.ViewModels
             MouseCodes.Add("RIGHT_CLICK_UP", MouseEventFlags.RightUp);
         }
 
+        public void Start()
+        {
+            Started = true;
+            LoadActions("pattern.rsclicker");
+            Thread = new Thread(ExecuteActions);
+            Thread.Start();
+        }
+
+        public void Stop()
+        {
+            Started = false;
+            Thread.Abort();
+        }
+
         public void LoadActions(string path)
         {
             Actions = new Pattern();
@@ -113,19 +75,28 @@ namespace Runescape_Clicker.ViewModels
 
         public void ExecuteActions()
         {
+            bool isRelative = false;
             POINT pos = new POINT();
+            POINT click = new POINT();
+            POINT start = new POINT();
 
-            keyboardHook.SetHook();
-            Actions.GetNextAction();
+            string first = Actions.GetNextAction();
+            if (first.Contains("RELATIVE"))
+            {
+                isRelative = true;
+                Actions.GetNextAction();
+                first = Actions.GetNextAction();
+
+                GetCursorPos(out click);
+
+                string[] t = first.Split(' ');
+                start.x = Convert.ToInt32(t[0]);
+                start.y = Convert.ToInt32(t[1]);
+
+            }
             while (Actions.Actions.Count > 0)
             {
-                KeyboardHook.mutex.WaitOne();
-                if (KeyboardHook.Stop)
-                    return;
-
                 string str = Actions.GetNextAction();
-
-                //Console.WriteLine(str);
 
                 if (str.Contains("CLICK"))
                 {
@@ -141,10 +112,7 @@ namespace Runescape_Clicker.ViewModels
 
                     while ((b - a).TotalMilliseconds < ms)
                     {
-                        KeyboardHook.mutex.WaitOne();
                         b = DateTime.Now;
-                        if (KeyboardHook.Stop)
-                            return;
                     }
                 }
                 else
@@ -156,9 +124,17 @@ namespace Runescape_Clicker.ViewModels
 
                     pos.x = x;
                     pos.y = y;
-                    SetCursorPos(x, y);
+
+                    if (isRelative)
+                    {
+                        pos.x = pos.x - start.x + click.x;
+                        pos.y = pos.y - start.y + click.y;
+                    }
+
+                    SetCursorPos(pos.x, pos.y);
                 }
             }
+            Started = false;
         }
     }
 }

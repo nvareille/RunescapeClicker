@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -20,18 +22,20 @@ namespace Runescape_Clicker.Views
     /// </summary>
     public partial class NewPatternView : Window
     {
+        public static NewPatternView r;
         private bool IsRecording;
         private MouseCatcher mouseCatcher;
 
         public NewPatternView()
         {
             InitializeComponent();
+            KeyboardHooker.Instance += CatchTouch;
+            r = this;
         }
 
         public void Reset()
         {
             mouseCatcher = new MouseCatcher();
-            mouseCatcher.window = this;
         }
 
         private void StartRecording(object sender, RoutedEventArgs e)
@@ -41,14 +45,28 @@ namespace Runescape_Clicker.Views
             if (IsRecording)
             {
                 RecordingButton.Content = "Click to stop recording";
-                mouseCatcher.ActivateHook((bool)Absolute.IsChecked ? "ABSOLUTE" : "RELATIVE");
+                mouseCatcher.Start((bool)Absolute.IsChecked ? "ABSOLUTE" : "RELATIVE");
             }
             else
             {
                 RecordingButton.Content = "Start Recording";
-                mouseCatcher.DeactivateHook();
+                mouseCatcher.Stop();
                 mouseCatcher.Pattern.Save("pattern.rsclicker");
             }
+        }
+
+        private static void CatchTouch(KeyboardHooker hooker, int code, IntPtr wParam, IntPtr lParam)
+        {
+            if (code >= 0 && (int)wParam == KeyboardHooker.WM_KEYDOWN && Marshal.ReadInt32(lParam) == 162)
+            {
+                r.StartRecording(null, null);
+            }
+        }
+
+        public void ClosingFct(object sender, CancelEventArgs a)
+        {
+            KeyboardHooker.Instance -= CatchTouch;
+            mouseCatcher.Stop();
         }
     }
 }

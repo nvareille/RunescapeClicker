@@ -54,6 +54,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Models\Pattern.cs" />
+    <Compile Include="ViewModels\MouseHooker.cs" />
+    <Compile Include="ViewModels\KeyboardHooker.cs" />
     <Compile Include="ViewModels\MouseCatcher.cs" />
     <Compile Include="ViewModels\MouseInterpreter.cs" />
     <Compile Include="Views\LoadPatternView.xaml.cs">
